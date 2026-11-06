@@ -1,1 +1,61 @@
 @import "tailwindcss";
+@import "@fontsource-variable/figtree";
+
+@theme {
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #2b1a20;
+  --color-muted: #6a5a60;
+  --color-line: #e9e1e3;
+  --color-paper: #fbf9f6;
+  --color-tint: #fff3cc;
+  --color-brand: #8c1d40;
+  --color-brand-dark: #6c1631;
+  --color-spark: #ffc627;
+  --color-rec: #d92d20;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-brand active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-brand bg-brand text-white hover:border-brand-dark hover:bg-brand-dark;
+  }
+  .btn-rec {
+    @apply border-rec bg-rec text-white hover:opacity-90;
+  }
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-muted focus:border-brand focus:ring-3 focus:ring-tint;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white p-6;
+  }
+  .rise {
+    animation: rise 0.3s ease-out both;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+/* The little burst when notes finish (see celebrate() in ui.tsx). */
+@keyframes spark {
+  to { opacity: 0; transform: translate(var(--x), var(--y)) rotate(160deg) scale(0.4); }
+}
+.spark {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  animation: spark 900ms cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .spark, .animate-ping { animation: none; }
+  .spark { display: none; }
+}

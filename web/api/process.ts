@@ -167,6 +167,10 @@ async function transcribe(url: string): Promise<{ lines: Line[]; seconds: number
     method: 'POST',
     headers: { 'Ocp-Apim-Subscription-Key': process.env.AZURE_SPEECH_KEY! },
     body: form, // fetch sets the multipart Content-Type and boundary
+  }).catch((e: Error & { cause?: { code?: string; message?: string } }) => {
+    // Node reports only "fetch failed"; the useful detail (bad address, DNS, timeout) is in `cause`.
+    const reason = e.cause?.code ?? e.cause?.message ?? e.message;
+    throw new Error(`Could not reach Azure Speech at ${new URL(base).host} (${reason}). Check AZURE_SPEECH_ENDPOINT.`);
   });
   if (!res.ok) throw new Error(`Azure Speech ${res.status}: ${await res.text()}`);
   const data = await res.json();

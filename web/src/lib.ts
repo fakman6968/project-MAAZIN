@@ -42,7 +42,14 @@ export async function createMeeting(audio: Blob, title: string, myNotes: string,
 /** Record mic, optionally mixed with a browser tab's audio (Meet/Teams in the browser). */
 export async function startRecording(includeTab: boolean) {
   const streams: MediaStream[] = [await navigator.mediaDevices.getUserMedia({ audio: true })];
-  if (includeTab) streams.push(await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }));
+  if (includeTab) {
+    const tab = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    streams.push(tab);
+    if (!tab.getAudioTracks().length) {
+      streams.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+      throw new Error("No meeting audio came through. Share your meeting tab again and turn on \"Also share tab audio\".");
+    }
+  }
   const ctx = new AudioContext();
   const dest = ctx.createMediaStreamDestination();
   for (const s of streams) if (s.getAudioTracks().length) ctx.createMediaStreamSource(s).connect(dest);
