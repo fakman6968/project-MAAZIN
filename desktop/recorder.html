@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'">
+<title>Maazin</title>
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 0; padding: 16px; background: #fafaf9; color: #1c1917; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  input, textarea { width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 8px; border: 1px solid #d6d3d1; border-radius: 6px; font: inherit; }
+  textarea { height: 220px; }
+  button { padding: 8px 12px; border-radius: 6px; border: 1px solid #d6d3d1; background: white; cursor: pointer; font: inherit; }
+  .primary { background: #0f766e; color: white; border: none; }
+  .rec { background: #dc2626; color: white; border: none; }
+  #banner { display: none; background: #dc2626; color: white; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-weight: 600; }
+  #status { color: #57534e; margin-top: 8px; min-height: 1.2em; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<h1>Maazin</h1>
+
+<div id="login">
+  <p>Sign in with your Maazin/Jason account.</p>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button class="primary" id="signin">Sign in</button>
+</div>
+
+<div id="main" style="display:none">
+  <div id="banner">● Recording system audio + mic</div>
+  <input id="title" placeholder="Meeting title">
+  <textarea id="notes" placeholder="Your rough notes (optional)"></textarea>
+  <div class="row">
+    <button class="primary" id="toggle">Start recording</button>
+    <button id="consent">Copy consent message</button>
+  </div>
+  <p style="font-size:12px;color:#78716c">Tip: wear headphones so the mic doesn't pick up your speakers and record them twice.</p>
+</div>
+<div id="status"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const status = (t) => ($('status').textContent = t);
+let rec, chunks, streams, ctx, startedAt;
+
+async function init() {
+  const email = await maazin.user();
+  $('login').style.display = email ? 'none' : '';
+  $('main').style.display = email ? '' : 'none';
+  if (email) status(`Signed in as ${email}`);
+}
+
+$('signin').onclick = async () => {
+  const err = await maazin.signIn($('email').value, $('password').value);
+  err ? status(err) : init();
+};
+$('consent').onclick = async () => { await maazin.copyConsent(); status('Consent message copied. Paste it into the meeting chat.'); };
+$('toggle').onclick = () => (rec ? stop() : start().catch((e) => { status(`Could not start: ${e.message}`); cleanup(); }));
+
+async function start() {
+  // System audio via loopback (main.js answers this request). The video track is required but unused.
+  const sys = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+  const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+  streams = [sys, mic];
+  ctx = new AudioContext();
+  const dest = ctx.createMediaStreamDestination();
+  for (const s of streams) if (s.getAudioTracks().length) ctx.createMediaStreamSource(s).connect(dest);
+  rec = new MediaRecorder(dest.stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 32000 });
+  chunks = [];
+  rec.ondataavailable = (e) => chunks.push(e.data);
+  rec.start(1000);
+  startedAt = Date.now();
+  $('banner').style.display = 'block';
+  $('toggle').textContent = 'Stop & write notes';
+  $('toggle').className = 'rec';
+  maazin.setRecording(true);
+  status('Recording…');
+}
+
+function cleanup() {
+  streams?.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+  ctx?.close();
+  rec = null;
+  $('banner').style.display = 'none';
+  $('toggle').textContent = 'Start recording';
+  $('toggle').className = 'primary';
+  maazin.setRecording(false);
+}
+
+async function stop() {
+  const done = new Promise((r) => (rec.onstop = r));
+  rec.stop();
+  await done;
+  const durationSec = Math.round((Date.now() - startedAt) / 1000);
+  cleanup();
+  $('toggle').disabled = true;
+  status('Uploading and writing notes… (this can take a minute)');
+  try {
+    const audio = await new Blob(chunks, { type: 'audio/webm' }).arrayBuffer();
+    const { id, error } = await maazin.save({
+      title: $('title').value || 'Untitled meeting', myNotes: $('notes').value, durationSec, audio,
+    });
+    if (error) status(`Saved, but processing failed: ${error}. Retry it from the web app.`);
+    else { status('Notes ready. Opening them in the web app.'); $('title').value = ''; $('notes').value = ''; }
+    maazin.openMeeting(id);
+  } catch (e) {
+    status(`Failed: ${e.message}`);
+  } finally {
+    $('toggle').disabled = false;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

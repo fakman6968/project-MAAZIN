@@ -1,0 +1,14 @@
+{
+  "name": "maazin-desktop",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0"
+  },
+  "devDependencies": {
+    "electron": "^45.2.2"
+  }
+}
