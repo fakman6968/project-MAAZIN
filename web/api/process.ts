@@ -23,6 +23,27 @@ type Line = { speaker: number; start: number; text: string };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
+/** GET /api/process: the signed-in user's budget, so the app can show it before they record. */
+export async function GET(req: Request): Promise<Response> {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return json({ error: 'Not signed in' }, 401);
+  const { data: auth } = await admin.auth.getUser(token);
+  if (!auth?.user) return json({ error: 'Invalid session' }, 401);
+
+  try {
+    const [usage, total] = await Promise.all([getUsage(auth.user.id), getTotalUsage()]);
+    const spentUsd = spent(usage);
+    return json({
+      spentUsd,
+      budgetUsd: USER_MONTHLY_USD,
+      minutesLeft: Math.max(0, Math.floor(((USER_MONTHLY_USD - spentUsd) / USD_PER_AUDIO_HOUR) * 60)),
+      paused: total.audio_seconds >= TOTAL_AUDIO_MINUTES * 60 || total.note_runs >= TOTAL_NOTE_RUNS,
+    });
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+  }
+}
+
 export async function POST(req: Request): Promise<Response> {
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return json({ error: 'Not signed in' }, 401);
@@ -42,8 +63,7 @@ export async function POST(req: Request): Promise<Response> {
     // Both throw if unreadable, so a broken cap never means no cap.
     const usage = await getUsage(user.id);
     const total = await getTotalUsage();
-    const spentUsd = (usage.audio_seconds / 3600) * USD_PER_AUDIO_HOUR + usage.note_runs * USD_PER_NOTE_RUN;
-    const overBudget = spentUsd >= USER_MONTHLY_USD;
+    const overBudget = spent(usage) >= USER_MONTHLY_USD;
 
     if (m.audio_path) {
       // The service role bypasses RLS, so never touch files outside the caller's folder.
@@ -149,6 +169,10 @@ async function pushToJason(
   if (!rows.size) return;
   const { error } = await admin.from('tasks').insert([...rows.values()]);
   if (error) throw new Error(`Could not add Jason tasks: ${error.message}`);
+}
+
+function spent(usage: { audio_seconds: number; note_runs: number }) {
+  return (usage.audio_seconds / 3600) * USD_PER_AUDIO_HOUR + usage.note_runs * USD_PER_NOTE_RUN;
 }
 
 async function getUsage(userId: string) {

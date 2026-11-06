@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase, type Meeting } from './lib';
+import { fetchUsage, supabase, type Meeting, type Usage } from './lib';
 import MeetingView from './MeetingView';
 import NewMeeting from './NewMeeting';
+import { UsageMeter } from './ui';
 
 // Tiny hash router: #/ , #/new , #/m/<id>
 function useRoute() {
@@ -106,7 +107,9 @@ function greeting() {
 function MeetingList() {
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
   const [q, setQ] = useState('');
+  const [usage, setUsage] = useState<Usage | null>(null);
   useEffect(() => {
+    fetchUsage().then(setUsage);
     supabase.from('meetings').select('*').order('created_at', { ascending: false }).then(({ data }) => setMeetings(data ?? []));
   }, []);
   const needle = q.toLowerCase();
@@ -117,6 +120,7 @@ function MeetingList() {
   return (
     <div className="rise space-y-5">
       <h1 className="text-3xl font-bold tracking-tight">{greeting()} ✦</h1>
+      {usage && <UsageMeter usage={usage} />}
 
       {meetings?.length === 0 ? (
         <div className="card space-y-3 py-12 text-center">

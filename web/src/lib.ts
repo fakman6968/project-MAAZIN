@@ -25,6 +25,15 @@ export async function processMeeting(meetingId: string) {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
 }
 
+export type Usage = { spentUsd: number; budgetUsd: number; minutesLeft: number; paused: boolean };
+
+/** This month's budget. Returns null if unavailable: the server still enforces the limit. */
+export async function fetchUsage(): Promise<Usage | null> {
+  const { data } = await supabase.auth.getSession();
+  const res = await fetch('/api/process', { headers: { authorization: `Bearer ${data.session?.access_token}` } }).catch(() => null);
+  return res?.ok ? res.json() : null;
+}
+
 /** Upload audio to the temporary bucket, create the meeting row, and kick off processing. */
 export async function createMeeting(audio: Blob, title: string, myNotes: string, durationSec: number | null) {
   const { data: u } = await supabase.auth.getUser();

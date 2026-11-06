@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { CONSENT_MESSAGE, createMeeting, startRecording } from './lib';
-import { CopyButton } from './ui';
+import { CONSENT_MESSAGE, createMeeting, fetchUsage, startRecording, type Usage } from './lib';
+import { CopyButton, outOfBudget, UsageNotice } from './ui';
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -12,7 +12,11 @@ export default function NewMeeting() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [seconds, setSeconds] = useState(0);
+  const [usage, setUsage] = useState<Usage | null>(null);
   const recRef = useRef<Awaited<ReturnType<typeof startRecording>> | null>(null);
+  const blocked = !!usage && outOfBudget(usage);
+
+  useEffect(() => { fetchUsage().then(setUsage); }, []);
 
   useEffect(() => {
     if (!recording) return;
@@ -52,6 +56,8 @@ export default function NewMeeting() {
   return (
     <div className="rise space-y-5">
       <h1 className="text-3xl font-bold tracking-tight">New meeting</h1>
+
+      {usage && !recording && <UsageNotice usage={usage} />}
 
       {recording && (
         <div role="status" className="flex items-center gap-3 rounded-xl bg-rec px-4 py-3 font-semibold text-white">
@@ -106,7 +112,7 @@ export default function NewMeeting() {
           </fieldset>
         )}
 
-        <button onClick={toggle} disabled={uploading} className={`btn w-full py-3.5 text-base ${recording ? 'btn-rec' : 'btn-primary'}`}>
+        <button onClick={toggle} disabled={uploading || (blocked && !recording)} className={`btn w-full py-3.5 text-base ${recording ? 'btn-rec' : 'btn-primary'}`}>
           {uploading ? 'Uploading…' : recording ? 'Stop and write my notes' : '● Start recording'}
         </button>
         {error && <p role="alert" className="text-sm font-medium text-rec">{error}</p>}
@@ -120,7 +126,7 @@ export default function NewMeeting() {
         <CopyButton text={CONSENT_MESSAGE} label="Copy message" />
       </section>
 
-      {!recording && (
+      {!recording && !blocked && (
         <label className="block cursor-pointer rounded-2xl border border-dashed border-line p-4 text-center text-sm text-muted transition hover:border-brand">
           Already have a recording? <span className="font-semibold text-brand">Upload a file</span>
           <input
