@@ -44,25 +44,23 @@ export default function App() {
 
 function Login() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
-  const go = async (signUp: boolean) => {
-    const { error } = signUp
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
-    setMsg(error ? error.message : signUp ? 'Check your email to confirm, then sign in.' : '');
+  // Same email-link sign-in as Jason. shouldCreateUser: false means only existing Jason accounts
+  // get in, so strangers can't sign up and spend your Azure and Claude credit.
+  const go = async () => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false, emailRedirectTo: location.origin },
+    });
+    setMsg(error ? error.message : 'Check your email for the sign-in link.');
   };
   return (
     <div className="mx-auto mt-24 max-w-sm space-y-3 p-6">
       <h1 className="text-2xl font-semibold">Maazin</h1>
       <p className="text-sm text-stone-500">Bot-free meeting notes. Uses the same account as Jason.</p>
       <input className="w-full rounded border p-2" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <input className="w-full rounded border p-2" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-      <div className="flex gap-2">
-        <button onClick={() => go(false)} className="rounded bg-teal-700 px-3 py-1.5 text-white">Sign in</button>
-        <button onClick={() => go(true)} className="rounded border px-3 py-1.5">Sign up</button>
-      </div>
-      {msg && <p className="text-sm text-red-700">{msg}</p>}
+      <button onClick={go} className="rounded bg-teal-700 px-3 py-1.5 text-white">Email me a sign-in link</button>
+      {msg && <p className="text-sm text-stone-700">{msg}</p>}
     </div>
   );
 }
