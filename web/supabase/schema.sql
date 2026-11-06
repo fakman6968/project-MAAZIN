@@ -47,9 +47,19 @@ $$;
 revoke all on function public.add_usage(uuid, int, int) from public, anon, authenticated;
 grant execute on function public.add_usage(uuid, int, int) to service_role;
 
+-- This month's usage across everyone, for the app-wide cap in api/process.ts.
+create or replace function public.total_usage()
+returns table (audio_seconds bigint, note_runs bigint) language sql stable as $$
+  select coalesce(sum(u.audio_seconds), 0)::bigint, coalesce(sum(u.note_runs), 0)::bigint
+  from public.usage_monthly u
+  where u.month = date_trunc('month', now() at time zone 'utc')::date;
+$$;
+revoke all on function public.total_usage() from public, anon, authenticated;
+grant execute on function public.total_usage() to service_role;
+
 -- Private, temporary audio bucket. Users may only upload into their own folder.
--- The 30 MB limit (about 2 hours at Maazin's bitrate) bounds what one upload can cost.
-insert into storage.buckets (id, name, public, file_size_limit) values ('audio', 'audio', false, 31457280)
+-- The 12 MB limit (about 50 minutes at Maazin's bitrate) bounds what one upload can cost.
+insert into storage.buckets (id, name, public, file_size_limit) values ('audio', 'audio', false, 12582912)
 on conflict (id) do update set file_size_limit = excluded.file_size_limit;
 
 drop policy if exists "upload own audio" on storage.objects;

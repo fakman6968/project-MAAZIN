@@ -26,7 +26,7 @@ Planned, after the demo:
 - **Action items:** Maazin sends them to a protected Jason endpoint, replacing the direct database write.
 
 ## Usage caps
-Each user gets 600 audio minutes and 100 note generations a month, set by env vars. The server measures audio using Azure's reported duration, in a table users can't edit. Uploads are limited to 30 MB. If a user is over the audio cap, the recording is deleted untranscribed. The check runs before each transcription, so a final recording can go over by up to one file. There is no global cap, so keep sign-ups off while the app is public.
+Each user gets a $1 monthly budget, estimated at $1 per audio hour and $0.02 per note generation (about 55 minutes of audio a month). All three values are env vars. The server measures audio using Azure's reported duration, in a table users can't edit. Uploads are limited to 12 MB. If a user is over budget, the recording is deleted untranscribed. The check runs before each transcription, so a final recording can go over by up to one file. Sign-up is open to everyone. A total cap across all users (1,800 audio minutes and 1,000 note generations a month, set by env vars) stops new work with a clear message. Like the per-user check, it runs before each job, so the total can go over by whatever is already running.
 
 ## Install
 The web app is an installable PWA (Chrome/Edge → "Install Maazin"). In the browser it records the mic plus a shared Meet/Teams/Zoom-web tab. The desktop tray app is what covers the native Zoom/Teams apps.

@@ -48,19 +48,19 @@ function Login() {
   const [email, setEmail] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState('');
-  // shouldCreateUser: false means only accounts added in Supabase
-  // get in, so strangers can't sign up and spend your Azure and Claude credit.
+  // Open sign-up: the first link for a new email creates the account. Per-user monthly caps
+  // in api/process.ts limit what each account can spend.
   const go = async (e: FormEvent) => {
     e.preventDefault();
     setState('sending');
     setError('');
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false, emailRedirectTo: location.origin },
+      options: { shouldCreateUser: true, emailRedirectTo: location.origin },
     });
     if (error) {
       setState('idle');
-      setError(/signups? not allowed/i.test(error.message) ? "That email isn't on the guest list yet." : error.message);
+      setError(error.message);
     } else setState('sent');
   };
   return (

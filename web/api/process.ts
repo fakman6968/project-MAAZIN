@@ -9,8 +9,14 @@ const admin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVI
 });
 const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY
 const MODEL = process.env.MAAZIN_MODEL || 'claude-haiku-5-5';
-const MAX_AUDIO_MINUTES = Number(process.env.MAAZIN_MAX_AUDIO_MINUTES) || 600;
-const MAX_NOTE_RUNS = Number(process.env.MAAZIN_MAX_NOTE_RUNS) || 100;
+// Monthly budget per user. Spend is estimated from usage, so the two rates should match real prices.
+const USER_MONTHLY_USD = Number(process.env.MAAZIN_USER_MONTHLY_USD) || 1;
+const USD_PER_AUDIO_HOUR = Number(process.env.MAAZIN_USD_PER_AUDIO_HOUR) || 1;
+const USD_PER_NOTE_RUN = Number(process.env.MAAZIN_USD_PER_NOTE_RUN) || 0.02;
+const USER_LIMIT_MESSAGE = `You've used your $${USER_MONTHLY_USD} of Maazin for this month. It resets on the 1st.`;
+const TOTAL_AUDIO_MINUTES = Number(process.env.MAAZIN_TOTAL_AUDIO_MINUTES) || 1800;
+const TOTAL_NOTE_RUNS = Number(process.env.MAAZIN_TOTAL_NOTE_RUNS) || 1000;
+const TOTAL_LIMIT_MESSAGE = 'Maazin has reached its monthly limit for everyone. It resets on the 1st.';
 
 type Line = { speaker: number; start: number; text: string };
 
@@ -33,16 +39,22 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     let transcript: Line[] | null = m.transcript;
-    const usage = await getUsage(user.id); // throws if unreadable, so a broken cap never means no cap
+    // Both throw if unreadable, so a broken cap never means no cap.
+    const usage = await getUsage(user.id);
+    const total = await getTotalUsage();
+    const spentUsd = (usage.audio_seconds / 3600) * USD_PER_AUDIO_HOUR + usage.note_runs * USD_PER_NOTE_RUN;
+    const overBudget = spentUsd >= USER_MONTHLY_USD;
 
     if (m.audio_path) {
       // The service role bypasses RLS, so never touch files outside the caller's folder.
       if (!m.audio_path.startsWith(`${user.id}/`)) return json({ error: 'Bad audio path' }, 403);
 
-      if (usage.audio_seconds >= MAX_AUDIO_MINUTES * 60) {
+      const overTotal = total.audio_seconds >= TOTAL_AUDIO_MINUTES * 60;
+      if (overTotal || overBudget) {
         // Unprocessed audio must not linger, so it's deleted rather than kept for later.
         await admin.storage.from('audio').remove([m.audio_path]);
-        const error = `Monthly limit of ${MAX_AUDIO_MINUTES} audio minutes reached. This recording was not transcribed and has been deleted.`;
+        const limit = overTotal ? TOTAL_LIMIT_MESSAGE : USER_LIMIT_MESSAGE;
+        const error = `${limit} This recording was not transcribed and has been deleted.`;
         await update({ status: 'error', error, audio_path: null });
         return json({ error }, 429);
       }
@@ -59,8 +71,10 @@ export async function POST(req: Request): Promise<Response> {
 
     if (!transcript?.length) throw new Error('Transcript is empty. Was anything said?');
 
-    if (usage.note_runs >= MAX_NOTE_RUNS) {
-      const error = `Monthly limit of ${MAX_NOTE_RUNS} note generations reached. Your transcript is saved; try again next month.`;
+    const notesOverTotal = total.note_runs >= TOTAL_NOTE_RUNS;
+    if (notesOverTotal || overBudget) {
+      const limit = notesOverTotal ? TOTAL_LIMIT_MESSAGE : USER_LIMIT_MESSAGE;
+      const error = `${limit} Your transcript is saved; try again next month.`;
       await update({ status: 'error', error });
       return json({ error }, 429);
     }
@@ -143,6 +157,13 @@ async function getUsage(userId: string) {
     .from('usage_monthly').select('audio_seconds, note_runs').eq('user_id', userId).eq('month', month).maybeSingle();
   if (error) throw new Error(`Could not check usage: ${error.message}`);
   return data ?? { audio_seconds: 0, note_runs: 0 };
+}
+
+async function getTotalUsage() {
+  const { data, error } = await admin.rpc('total_usage');
+  if (error) throw new Error(`Could not check total usage: ${error.message}`);
+  const row = data?.[0];
+  return { audio_seconds: Number(row?.audio_seconds ?? 0), note_runs: Number(row?.note_runs ?? 0) };
 }
 
 async function addUsage(userId: string, seconds: number, runs: number) {

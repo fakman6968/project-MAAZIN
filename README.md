@@ -17,8 +17,7 @@ project MAAZIN/
 ## 2. Database
 In the SQL editor of Maazin's Supabase project, run `web/supabase/schema.sql`. It creates the `meetings` and usage tables (RLS) and a private `audio` bucket.
 
-Sign-in only accepts existing accounts. Add yourself under **Authentication → Users**, and set **Site URL** under **URL Configuration** to Maazin's address.
-Free-plan Storage caps uploads at 50 MB. That's roughly 3 hours of audio at the 32 kbps Maazin records.
+Anyone can sign up with an email link, so keep new sign-ups enabled in Supabase. Set **Site URL** under **URL Configuration** to Maazin's address.
 
 ## 3. Web app + API
 ```bash
@@ -49,7 +48,7 @@ Open the deployed site (or `vercel dev` on localhost) in Chrome or Edge, then cl
 Web app → **New meeting** → upload any audio/video file, or record from the mic. Tick "capture a browser tab" to grab Meet/Teams-web audio.
 
 ## Known limits (milestone 1)
-- Each user is capped at 600 audio minutes and 100 note generations a month (`MAAZIN_MAX_AUDIO_MINUTES`, `MAAZIN_MAX_NOTE_RUNS`). Uploads are limited to 30 MB. There's no cap across all users, so keep sign-ups off while the app is public.
+- Each user has a $1 monthly budget (`MAAZIN_USER_MONTHLY_USD`). Spend is estimated with `MAAZIN_USD_PER_AUDIO_HOUR` and `MAAZIN_USD_PER_NOTE_RUN`, so keep those matched to real prices. Uploads are limited to 12 MB. Sign-up is open, so there's also a total monthly cap across all users (`MAAZIN_TOTAL_AUDIO_MINUTES`, default 1,800, and `MAAZIN_TOTAL_NOTE_RUNS`, default 1,000). Set these below your provider limits.
 - System audio capture is Windows-only (`audio: 'loopback'`). macOS needs extra work.
 - The desktop app forgets your sign-in when it restarts.
 - Without headphones, the mic re-records your speakers, so other people may appear twice.
