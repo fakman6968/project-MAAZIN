@@ -10,21 +10,14 @@ project MAAZIN/
 ```
 
 ## 1. Accounts and keys
-- **Supabase**: reuse Jason's project, so you get the same sign-in. You need the project URL, the anon key and the service-role key.
+- **Supabase**: create a new project for Maazin. You need the project URL, the anon key and the service-role key.
 - **Anthropic**: an API key. The default model is `claude-haiku-5-5`; change it with `MAAZIN_MODEL`.
 - **Azure Speech**: in the Azure portal, create a **Speech** resource on the standard (S0) tier, in a region that supports fast transcription. Copy its endpoint and key into `AZURE_SPEECH_ENDPOINT` and `AZURE_SPEECH_KEY`.
 
 ## 2. Database
-In the Supabase SQL editor for Jason's project, run these two:
-1. This, so Jason's `tasks` table accepts Maazin items:
-   ```sql
-   alter table tasks drop constraint if exists tasks_source_medium_check;
-   alter table tasks add constraint tasks_source_medium_check
-     check (source_medium in ('outlook', 'gmail', 'slack', 'zoom', 'teams', 'maazin'));
-   ```
-2. `web/supabase/schema.sql` from this repo. It creates the `meetings` and usage tables (RLS) and a private `audio` bucket.
+In the SQL editor of Maazin's Supabase project, run `web/supabase/schema.sql`. It creates the `meetings` and usage tables (RLS) and a private `audio` bucket.
 
-Action items then appear on Jason's board automatically after each meeting.
+Sign-in only accepts existing accounts. Add yourself under **Authentication → Users**, and set **Site URL** under **URL Configuration** to Maazin's address.
 Free-plan Storage caps uploads at 50 MB. That's roughly 3 hours of audio at the 32 kbps Maazin records.
 
 ## 3. Web app + API

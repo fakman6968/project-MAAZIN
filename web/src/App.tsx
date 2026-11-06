@@ -45,7 +45,7 @@ export default function App() {
 function Login() {
   const [email, setEmail] = useState('');
   const [msg, setMsg] = useState('');
-  // Same email-link sign-in as Jason. shouldCreateUser: false means only existing Jason accounts
+  // shouldCreateUser: false means only accounts added in Supabase
   // get in, so strangers can't sign up and spend your Azure and Claude credit.
   const go = async () => {
     const { error } = await supabase.auth.signInWithOtp({
@@ -57,7 +57,7 @@ function Login() {
   return (
     <div className="mx-auto mt-24 max-w-sm space-y-3 p-6">
       <h1 className="text-2xl font-semibold">Maazin</h1>
-      <p className="text-sm text-stone-500">Bot-free meeting notes. Uses the same account as Jason.</p>
+      <p className="text-sm text-stone-500">Bot-free meeting notes.</p>
       <input className="w-full rounded border p-2" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <button onClick={go} className="rounded bg-teal-700 px-3 py-1.5 text-white">Email me a sign-in link</button>
       {msg && <p className="text-sm text-stone-700">{msg}</p>}

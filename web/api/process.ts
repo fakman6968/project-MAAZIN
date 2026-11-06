@@ -72,10 +72,12 @@ export async function POST(req: Request): Promise<Response> {
 
     // A Jason problem must never cost the user their notes, so it's recorded, not thrown.
     let jason_error: string | null = null;
-    try {
-      await pushToJason(m, user.id, notes, new URL(req.url).origin);
-    } catch (e) {
-      jason_error = e instanceof Error ? e.message : String(e);
+    if (process.env.JASON_SYNC_ENABLED === 'true') {
+      try {
+        await pushToJason(m, user.id, notes, new URL(req.url).origin);
+      } catch (e) {
+        jason_error = e instanceof Error ? e.message : String(e);
+    }
     }
     await update({ jason_error });
     return json({ ok: true });
