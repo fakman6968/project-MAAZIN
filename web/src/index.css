@@ -12,6 +12,8 @@
   --color-brand-dark: #6c1631;
   --color-spark: #ffc627;
   --color-rec: #d92d20;
+  --color-ember: #c2410c;
+  --color-flame: #f76707;
 }
 
 @layer components {
@@ -19,7 +21,13 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-brand active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply border-brand bg-brand text-white hover:border-brand-dark hover:bg-brand-dark;
+    @apply border-transparent text-white hover:border-transparent;
+    background: linear-gradient(120deg, var(--color-brand), var(--color-ember));
+    box-shadow: 0 4px 14px rgb(194 65 12 / 0.3);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 6px 22px rgb(247 103 7 / 0.45);
+    transform: translateY(-1px);
   }
   .btn-rec {
     @apply border-rec bg-rec text-white hover:opacity-90;
@@ -30,6 +38,51 @@
   .card {
     @apply rounded-2xl border border-line bg-white p-6;
   }
+  .fire-text {
+    background: linear-gradient(100deg, var(--color-brand) 10%, var(--color-ember) 75%, var(--color-flame));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .fire-fill {
+    background: linear-gradient(90deg, var(--color-spark), var(--color-flame), var(--color-rec));
+  }
+  /* A slim strip of fire across the top of every signed-in page. */
+  .fire-band {
+    height: 5px;
+    background: linear-gradient(90deg, var(--color-brand), var(--color-ember), var(--color-flame), var(--color-spark), var(--color-flame), var(--color-brand));
+    background-size: 200% 100%;
+    animation: flow 9s linear infinite;
+  }
+  .fire-card {
+    @apply rounded-2xl border border-line bg-white p-5 transition;
+    border-left: 4px solid var(--color-spark);
+  }
+  .fire-card:hover {
+    border-left-color: var(--color-flame);
+    box-shadow: 0 8px 26px rgb(247 103 7 / 0.16);
+    transform: translateY(-2px);
+  }
+  .fire-rec {
+    background: linear-gradient(90deg, #b42318, var(--color-ember), #b42318);
+    background-size: 200% 100%;
+    animation: flow 4s linear infinite;
+  }
+  .fire-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(90% 55% at 50% 112%, var(--color-spark) 0%, var(--color-flame) 26%, transparent 66%),
+      linear-gradient(180deg, #2b0713 0%, #5c1029 45%, var(--color-brand) 100%);
+  }
+  .ember {
+    position: absolute;
+    bottom: -12px;
+    border-radius: 9999px;
+    background: var(--color-spark);
+    box-shadow: 0 0 10px 2px var(--color-flame);
+    animation: ember linear infinite;
+  }
   .rise {
     animation: rise 0.3s ease-out both;
   }
@@ -38,6 +91,22 @@
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
+}
+
+body {
+  background:
+    radial-gradient(70rem 26rem at 50% -8rem, rgb(255 198 39 / 0.2), transparent 70%),
+    var(--color-paper);
+  background-repeat: no-repeat;
+}
+
+@keyframes flow {
+  to { background-position: -200% 0; }
+}
+@keyframes ember {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translate(var(--drift), -105vh); opacity: 0; }
 }
 
 @keyframes rise {
@@ -56,6 +125,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise, .spark, .animate-ping { animation: none; }
+  .rise, .spark, .animate-ping, .fire-band, .fire-rec { animation: none; }
+  .ember { display: none; }
   .spark { display: none; }
 }

@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { fetchUsage, supabase, type Meeting, type Usage } from './lib';
 import MeetingView from './MeetingView';
 import NewMeeting from './NewMeeting';
-import { UsageMeter } from './ui';
+import { Embers, UsageMeter } from './ui';
 
 // Tiny hash router: #/ , #/new , #/m/<id>
 function useRoute() {
@@ -30,18 +30,21 @@ export default function App() {
   if (!session) return <Login />;
 
   return (
+    <>
+    <div className="fire-band" />
     <div className="mx-auto max-w-3xl px-5 py-6">
-      <header className="mb-8 flex items-center justify-between gap-3">
-        <a href="#/" className="flex items-center gap-2 text-xl font-bold tracking-tight">
+      <header className="mb-8 flex items-center justify-between gap-2">
+        <a href="#/" className="flex shrink-0 items-center gap-2 text-xl font-bold tracking-tight">
           <img src="/icon.svg" alt="" className="size-8" /> Maazin
         </a>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-3 whitespace-nowrap text-sm">
           <button onClick={() => supabase.auth.signOut()} className="font-medium text-muted hover:text-ink">Sign out</button>
-          <a href="#/new" className="btn btn-primary">+ New meeting</a>
+          <a href="#/new" className="btn btn-primary">+ New<span className="hidden sm:inline"> meeting</span></a>
         </div>
       </header>
       {route === '/new' ? <NewMeeting /> : route.startsWith('/m/') ? <MeetingView id={route.slice(3)} /> : <MeetingList />}
     </div>
+    </>
   );
 }
 
@@ -65,8 +68,9 @@ function Login() {
     } else setState('sent');
   };
   return (
-    <main className="grid min-h-dvh place-items-center p-5">
-      <div className="card rise w-full max-w-sm space-y-5 text-center">
+    <main className="fire-hero grid min-h-dvh place-items-center p-5">
+      <Embers />
+      <div className="card rise relative w-full max-w-sm space-y-5 text-center shadow-2xl">
         <img src="/icon.svg" alt="" className="mx-auto size-14" />
         {state === 'sent' ? (
           <div role="status" className="space-y-1">
@@ -76,7 +80,7 @@ function Login() {
         ) : (
           <>
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold tracking-tight">Welcome to Maazin</h1>
+              <h1 className="fire-text text-3xl font-extrabold tracking-tight">Welcome to Maazin</h1>
               <p className="text-muted">Your meetings, written up for you. No bots in the call.</p>
             </div>
             <form onSubmit={go} className="space-y-3">
@@ -119,12 +123,12 @@ function MeetingList() {
   );
   return (
     <div className="rise space-y-5">
-      <h1 className="text-3xl font-bold tracking-tight">{greeting()} ✦</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight"><span className="fire-text">{greeting()}</span> <span className="text-flame">✦</span></h1>
       {usage && <UsageMeter usage={usage} />}
 
       {meetings?.length === 0 ? (
         <div className="card space-y-3 py-12 text-center">
-          <p className="text-4xl text-spark" aria-hidden>✦</p>
+          <p className="text-4xl text-flame" aria-hidden>✦</p>
           <h2 className="text-xl font-bold">Your first notes are one meeting away</h2>
           <p className="text-muted">Record a call or upload a file, and Maazin will write it up.</p>
           <a href="#/new" className="btn btn-primary">Start a meeting</a>
@@ -135,7 +139,7 @@ function MeetingList() {
           {meetings && shown.length === 0 && <p className="text-center text-muted">Nothing matches "{q}".</p>}
           <div className="space-y-3">
             {shown.map((m) => (
-              <a key={m.id} href={`#/m/${m.id}`} className="block rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-brand hover:shadow-sm">
+              <a key={m.id} href={`#/m/${m.id}`} className="fire-card block">
                 <div className="flex items-start justify-between gap-3">
                   <span className="font-bold">{m.title}</span>
                   <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${PILL[m.status].style}`}>{PILL[m.status].label}</span>

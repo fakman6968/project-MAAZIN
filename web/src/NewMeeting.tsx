@@ -55,12 +55,12 @@ export default function NewMeeting() {
 
   return (
     <div className="rise space-y-5">
-      <h1 className="text-3xl font-bold tracking-tight">New meeting</h1>
+      <h1 className="fire-text text-3xl font-extrabold tracking-tight">New meeting</h1>
 
       {usage && !recording && <UsageNotice usage={usage} />}
 
       {recording && (
-        <div role="status" className="flex items-center gap-3 rounded-xl bg-rec px-4 py-3 font-semibold text-white">
+        <div role="status" className="fire-rec flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-white">
           <span className="relative flex size-3">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-75" />
             <span className="relative inline-flex size-3 rounded-full bg-white" />

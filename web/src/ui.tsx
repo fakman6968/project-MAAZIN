@@ -1,16 +1,38 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { Usage } from './lib';
+
+/** Glowing embers drifting up the sign-in page. Hidden by CSS for reduced-motion users. */
+export function Embers() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {Array.from({ length: 16 }, (_, i) => (
+        <span
+          key={i}
+          className="ember"
+          style={{
+            left: `${(i * 37 + 8) % 100}%`,
+            width: 3 + (i % 3) * 2,
+            height: 3 + (i % 3) * 2,
+            animationDuration: `${7 + (i % 5) * 1.5}s`,
+            animationDelay: `${-(i * 1.3)}s`,
+            '--drift': `${(i % 2 ? 1 : -1) * (20 + i * 4)}px`,
+          } as CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
 
 /** A small burst of sparks from the top of the screen. Hidden by CSS for reduced-motion users. */
 export function celebrate() {
-  const colours = ['#ffc627', '#8c1d40', '#e8a33d'];
+  const colours = ['#ffc627', '#f76707', '#d92d20', '#8c1d40'];
   for (let i = 0; i < 18; i++) {
     const el = document.createElement('span');
     const angle = (i / 18) * Math.PI * 2;
     const distance = 90 + Math.random() * 110;
     el.className = 'spark';
     el.textContent = '✦';
-    el.style.cssText = `left:50%;top:150px;font-size:${10 + Math.random() * 12}px;color:${colours[i % 3]}`;
+    el.style.cssText = `left:50%;top:150px;font-size:${10 + Math.random() * 12}px;color:${colours[i % colours.length]}`;
     el.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
     el.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
     el.addEventListener('animationend', () => el.remove());
@@ -24,7 +46,7 @@ export const outOfBudget = (u: Usage) => u.spentUsd >= u.budgetUsd || u.paused;
 
 export function UsageMeter({ usage }: { usage: Usage }) {
   const percent = Math.min(100, (usage.spentUsd / usage.budgetUsd) * 100);
-  const colour = outOfBudget(usage) ? 'bg-rec' : usage.minutesLeft < LOW_MINUTES ? 'bg-spark' : 'bg-brand';
+  const colour = outOfBudget(usage) ? 'bg-rec' : usage.minutesLeft < LOW_MINUTES ? 'bg-spark' : 'fire-fill';
   return (
     <div className="rounded-2xl border border-line bg-white p-4">
       <div className="mb-2 flex flex-wrap justify-between gap-x-3 text-sm">

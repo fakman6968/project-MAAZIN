@@ -31,7 +31,7 @@ export type Usage = { spentUsd: number; budgetUsd: number; minutesLeft: number; 
 export async function fetchUsage(): Promise<Usage | null> {
   const { data } = await supabase.auth.getSession();
   const res = await fetch('/api/process', { headers: { authorization: `Bearer ${data.session?.access_token}` } }).catch(() => null);
-  return res?.ok ? res.json() : null;
+  return res?.ok ? res.json().catch(() => null) : null;
 }
 
 /** Upload audio to the temporary bucket, create the meeting row, and kick off processing. */

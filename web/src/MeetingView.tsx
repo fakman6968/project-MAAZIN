@@ -14,7 +14,7 @@ function Progress({ status }: { status: Meeting['status'] }) {
     <ol role="status" className="card rise grid gap-3 sm:grid-cols-3">
       {STEPS.map((s, i) => (
         <li key={s.status} className={`flex items-center gap-2 text-sm font-medium ${i > current ? 'text-muted' : ''}`}>
-          <span className={`grid size-6 shrink-0 place-items-center rounded-full text-xs ${i < current ? 'bg-brand text-white' : i === current ? 'animate-pulse bg-spark text-ink' : 'bg-tint text-muted'}`}>
+          <span className={`grid size-6 shrink-0 place-items-center rounded-full text-xs ${i < current ? 'bg-brand text-white' : i === current ? 'fire-fill animate-pulse text-ink' : 'bg-tint text-muted'}`}>
             {i < current ? '✓' : i + 1}
           </span>
           {s.label}
@@ -65,7 +65,7 @@ export default function MeetingView({ id }: { id: string }) {
     <article className="rise space-y-6">
       <div>
         <a href="#/" className="text-sm font-medium text-muted hover:text-brand">← All meetings</a>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">{m.title}</h1>
+        <h1 className="fire-text mt-2 text-3xl font-extrabold tracking-tight">{m.title}</h1>
         <p className="text-sm text-muted">
           {new Date(m.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
           {m.duration_sec ? ` · ${Math.max(1, Math.round(m.duration_sec / 60))} min` : ''}
@@ -103,7 +103,7 @@ export default function MeetingView({ id }: { id: string }) {
           <div>
             <h2 className="mb-2 text-lg font-bold">Decisions</h2>
             {m.notes.decisions.length ? (
-              <ul className="list-disc space-y-1 pl-5 marker:text-spark">
+              <ul className="list-disc space-y-1 pl-5 marker:text-flame">
                 {m.notes.decisions.map((d, i) => <li key={i}>{d}</li>)}
               </ul>
             ) : <p className="text-muted">No decisions this time.</p>}
